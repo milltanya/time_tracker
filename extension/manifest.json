@@ -1,13 +1,11 @@
 {
-    "name": "Getting Started Example",
+    "name": "Time Tracker",
     "version": "1.0",
-    "description": "Build an Extension!",
-    "permissions": ["activeTab", "declarativeContent", "storage"],
+    "permissions": ["tabs"],
     "background": {
         "scripts": ["background.js"],
         "persistent": false
     },
-    "options_page": "options.html",
     "page_action": {
         "default_popup": "popup.html",
         "default_icon": {
