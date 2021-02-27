@@ -34,7 +34,6 @@ chrome.runtime.onInstalled.addListener(function() {
         });
     }
 
-    chrome.tabs.onActivated.addListener(function(activeInfo) {
-        RegisterTab();
-    });
+    chrome.tabs.onActivated.addListener(RegisterTab);
+    chrome.tabs.onUpdated.addListener(RegisterTab);
 });
