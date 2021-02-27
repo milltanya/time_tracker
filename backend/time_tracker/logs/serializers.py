@@ -1,5 +1,6 @@
-from .models import Position, Employee, Log
 from rest_framework import serializers
+
+from .models import Position, Employee, Log
 
 
 class PositionSerializer(serializers.ModelSerializer):
@@ -16,5 +17,5 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 class LogSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Log        
+        model = Log
         exclude = []

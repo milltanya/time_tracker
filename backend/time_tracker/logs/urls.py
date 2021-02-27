@@ -1,13 +1,10 @@
-from django.urls import include, path
-from rest_framework import routers
+from django.urls import path
+from rest_framework.urlpatterns import format_suffix_patterns
 
-from .views import PositionViewSet, EmployeeViewSet, LogViewSet
+from .views import position_list, employee_list, log_list
 
-router = routers.DefaultRouter()
-router.register('positions', PositionViewSet)
-router.register('employees', EmployeeViewSet)
-router.register('logs', LogViewSet)
-
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = format_suffix_patterns([
+    path('positions/', position_list),
+    path('employees/', employee_list),
+    path('logs/', log_list),
+])
