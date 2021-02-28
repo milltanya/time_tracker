@@ -25,7 +25,7 @@ chrome.runtime.onInstalled.addListener(function() {
                 "start": ts,
                 "tab_name": tab.title,
                 "background": false,
-                "user": "tanya"
+                "user": "user"
             }); 
             console.log("Data: " + data);
         
