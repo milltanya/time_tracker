@@ -6,16 +6,16 @@ from .models import Position, Employee, Log
 class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
-        exclude = []
+        fields = '__all__'
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        exclude = []
+        fields = '__all__'
 
 
 class LogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Log
-        exclude = []
+        fields = '__all__'

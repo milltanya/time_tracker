@@ -51,5 +51,14 @@ def log_list(request):
         serializer = LogSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            log = Log.objects.get(id=serializer.data['id'])
+            prev_log = Log.objects\
+                .filter(user__exact=log.user)\
+                .filter(start__lt=log.start)\
+                .order_by('start')\
+                .last()
+            if prev_log:
+                prev_log.end = log.start
+                prev_log.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

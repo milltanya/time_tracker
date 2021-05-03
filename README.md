@@ -17,7 +17,7 @@ sudo docker-compose run web python manage.py migrate
 3) Делаем INSERT-запросы напрямую в базу с помощью SQL.
 
 Как подключиться к базе из консоли или JDBC
-1) Выполняем `sudo docker inspect backend_db_1 | grep Gateway` и копируем ip-адрес базы.
+1) Выполняем `sudo docker inspect backend_db_1 | grep IPAddress` и копируем ip-адрес базы.
 2) Используя адрес хоста, порт 5432, юзера time_tracker и пароль password, можем полключиться к базе. 
 Пример для консоли: 
 ```
