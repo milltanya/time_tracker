@@ -1,10 +1,31 @@
 {
     "name": "Time Tracker",
-    "version": "1.0",
-    "permissions": ["tabs"],
+    "description": "Time Tracker app",
+    "version": "1.1",
+    "manifest_version": 3,
+    "permissions": [
+        "tabs",
+        "storage"
+    ],
+    "host_permissions": [
+        "http://localhost:8080/*"
+    ],
     "background": {
-        "scripts": ["background.js"],
-        "persistent": false
+        "service_worker": "background.js"
     },
-    "manifest_version": 2
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "/images/icon16.jpg",
+        "32": "/images/icon32.jpg",
+        "48": "/images/icon48.jpg",
+        "128": "/images/icon128.jpg"
+      }
+    },
+    "icons": {
+      "16": "/images/icon16.jpg",
+      "32": "/images/icon32.jpg",
+      "48": "/images/icon48.jpg",
+      "128": "/images/icon128.jpg"
+    }
 }
