@@ -1,0 +1,147 @@
+  openapi: 3.0.0
+  info:
+    title: Time tracker API
+    description: Time tracker extension backend
+    version: "1.0.0"
+  servers:
+    # Added by API Auto Mocking Plugin
+    - description: SwaggerHub API Auto Mocking
+      url: https://virtserver.swaggerhub.com/milltanya/Time_tracker/1.0.0
+    - url: https://127.0.0.1:8000/api
+  paths:
+    /employees:
+      get:
+        description: Returns list of saved employees
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Employee'
+      post:
+        description: Save a log
+        responses:
+          '201':
+            description: Created
+          '400':
+            description: Bad Request
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+    /logs:
+      get:
+        description: Returns list of saved logs
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Log'
+      post:
+        description: Save a log
+        responses:
+          '201':
+            description: Created
+          '400':
+            description: Bad Request
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+    /positions:
+      get:
+        description: Returns list of saved positions
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Position'
+      post:
+        description: Save a log
+        responses:
+          '201':
+            description: Created
+          '400':
+            description: Bad Request
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+  components:
+    schemas:
+      Employee:
+        type: object
+        required:
+          - id
+          - name
+          - mickname
+          - position
+        properties:
+          id:
+            type: integer
+            example: 1234
+          name:
+            type: string
+            example: Tanya Miller
+          nickname:
+            type: string
+            example: milltanya
+          position:
+            $ref: '#/components/schemas/Position/name'
+      Position:
+        type: object
+        required:
+          - id
+          - name
+        properties:
+          id:
+            type: integer
+            example: 123
+          name:
+            type: string
+            example: Developer
+      Log:
+        required:
+          - id
+          - browser
+          - user
+          - start
+          - tab_name
+          - url
+          - background
+        properties:
+          id:
+            type: integer
+            example: 12345
+          browser:
+            type: string
+            example: Chrome
+          user:
+            $ref: '#/components/schemas/Employee/nickname'
+          start:
+            type: string
+            example: 2021-05-07T16:14:26.104Z
+          tab_name:
+            type: string
+            example: Google
+          url:
+            type: string
+            example: https://www.google.com/
+          background:
+            type: boolean
+            example: false
+        type: object
