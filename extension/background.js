@@ -2,33 +2,41 @@ function RegisterTab() {
     chrome.tabs.query({active:true}, function(tabs) {
         let tab = tabs[0];
 
-        chrome.storage.local.get(['userLoggedIn', 'token'], function(response) {
+        if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
+            chrome.storage.local.get(['userLoggedIn', 'token'], function(response) {
+                if (response.userLoggedIn) {
+                    let data = JSON.stringify({ 
+                        "url": tab.url,
+                        "browser": "Chrome",
+                        "startDateTime": new Date().toISOString(),
+                        "tabName": tab.title,
+                        "background": false
+                    }); 
+                    console.info('token: ', 'Bearer ' + response.token);
+                    console.info('data: ', data);
 
-            let data = JSON.stringify({ 
-                "url": tab.url,
-                "browser": "Chrome",
-                "startDateTime": new Date().toISOString(),
-                "tabName": tab.title,
-                "background": false
-            }); 
-            console.info('token: ', 'Bearer ' + response.token);
-            console.info('data: ', data);
-
-            fetch('http://localhost:8080/log/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + response.token
-                },
-                body: data
-            }).then((response) => {
-                if (response.status !== 200) {
-                    console.error('Log add failure: ', response);
+                    fetch('http://localhost:8080/log/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + response.token
+                        },
+                        body: data
+                    }).then((response) => {
+                        if (response.status == 200) {
+                            console.log('Log added successfully: ', response);
+                        } else if (response.status == 401) {
+                            console.error('Unauthorized');
+                            chrome.storage.local.set({ userLoggedIn: false, token: "" });
+                        } else {
+                            console.error('Log add failure: ', response);
+                        }
+                    })
                 } else {
-                    console.log('Log added successfully: ', response);
+                    console.error('Unauthorized');
                 }
             })
-        })
+        }
     })
 }
   
