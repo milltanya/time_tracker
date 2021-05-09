@@ -3,7 +3,7 @@ function RegisterTab() {
         let tab = tabs[0];
 
         if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
-            chrome.storage.local.get(['userLoggedIn', 'token'], function(response) {
+            chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(response) {
                 if (response.userLoggedIn) {
                     let data = JSON.stringify({ 
                         "url": tab.url,
@@ -12,10 +12,9 @@ function RegisterTab() {
                         "tabName": tab.title,
                         "background": false
                     }); 
-                    console.info('token: ', 'Bearer ' + response.token);
-                    console.info('data: ', data);
+                    console.log('data: ', data);
 
-                    fetch('http://localhost:8080/log/add', {
+                    fetch(response.backendUrl + '/log/add', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -24,24 +23,85 @@ function RegisterTab() {
                         body: data
                     }).then((response) => {
                         if (response.status == 200) {
-                            console.log('Log added successfully: ', response);
+                            console.log('Log added successfully');
                         } else if (response.status == 401) {
                             console.error('Unauthorized');
-                            chrome.storage.local.set({ userLoggedIn: false, token: "" });
+                            logOut();
                         } else {
                             console.error('Log add failure: ', response);
                         }
                     })
                 } else {
                     console.error('Unauthorized');
+                    logOut();
                 }
             })
         }
     })
 }
-  
-  
-chrome.runtime.onInstalled.addListener(function() {
-    chrome.tabs.onActivated.addListener(RegisterTab);
-    chrome.tabs.onUpdated.addListener(RegisterTab);
+
+
+
+async function logIn(email, pass) {
+    const response = await fetch('http://localhost:8080/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            'email': email,
+            'password': pass
+        })
+    });
+    console.log("Fetch response: ", response);
+    if (response.status === 200) {
+        const response_data = await response.json();
+        chrome.storage.local.set({ userLoggedIn: true, token: response_data.userInfo.token });
+        if (chrome.runtime.lastError) {
+            console.error('lastError:', chrome.runtime.lastError);
+            return 1;
+        }
+        chrome.tabs.onActivated.addListener(RegisterTab);
+        chrome.tabs.onUpdated.addListener(RegisterTab);
+        console.log('Log in succeessful');
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+function logOut() {
+    try {
+        chrome.storage.local.set({ userLoggedIn: false, token: "" });
+        chrome.tabs.onActivated.removeListener(RegisterTab);
+        chrome.tabs.onUpdated.removeListener(RegisterTab);
+        return 0;
+    } catch {
+        return 1;
+    }
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.message === 'login') {
+        logIn(request.email, request.pass).then(sendResponse);
+        return true;
+    } else if (request.message === 'logout') {
+        sendResponse(logOut());
+        return true;
+    } 
+});
+
+chrome.runtime.onInstalled.addListener((details) => {
+    const manifest = chrome.runtime.getManifest();
+    const backendUrl = manifest.host_permissions[0].slice(0, -2);
+    console.log("backendUrl: ", backendUrl);
+    chrome.storage.local.set({ backendUrl: backendUrl });
+    if (chrome.runtime.lastError) {
+        console.error('lastError:', chrome.runtime.lastError);
+        return 1;
+    }
+    chrome.storage.local.get(['userLoggedIn'], function(response) {
+        if (response.userLoggedIn) {
+            chrome.tabs.onActivated.addListener(RegisterTab);
+            chrome.tabs.onUpdated.addListener(RegisterTab);
+        };
+    });
 });
