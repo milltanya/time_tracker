@@ -4,6 +4,10 @@ function RegisterTab() {
 
         if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
             chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(items) {
+                if (chrome.runtime.lastError) {
+                    console.error('lastError:', chrome.runtime.lastError);
+                    return;
+                }
                 if (items.userLoggedIn) {
                     let data = JSON.stringify({ 
                         "url": tab.url,
@@ -57,10 +61,8 @@ function logIn(email, pass) {
                     'password': pass
                 })
             }).then((response) => {
-                console.log("Fetch response: ", response);
                 if (response.status === 200) {
                     response.json().then((response_data) => {
-                        console.log("Fetch response data: ", response_data);
                         chrome.storage.local.set({ userLoggedIn: true, token: response_data.userInfo.token }, () => {
                             if (chrome.runtime.lastError) {
                                 console.error('lastError:', chrome.runtime.lastError);
@@ -111,12 +113,15 @@ chrome.runtime.onInstalled.addListener((details) => {
     const manifest = chrome.runtime.getManifest();
     const backendUrl = manifest.host_permissions[0].slice(0, -2);
     console.log("backendUrl: ", backendUrl);
-    chrome.storage.local.set({ backendUrl: backendUrl });
-    if (chrome.runtime.lastError) {
-        console.error('lastError:', chrome.runtime.lastError);
-        return 1;
-    }
+    chrome.storage.local.set({ backendUrl: backendUrl }, () => {
+        if (chrome.runtime.lastError) {
+            console.error('lastError:', chrome.runtime.lastError);
+        }
+    });
     chrome.storage.local.get(['userLoggedIn'], function(response) {
+        if (chrome.runtime.lastError) {
+            console.error('lastError:', chrome.runtime.lastError);
+        }
         if (response.userLoggedIn) {
             chrome.tabs.onActivated.addListener(RegisterTab);
             chrome.tabs.onUpdated.addListener(RegisterTab);
