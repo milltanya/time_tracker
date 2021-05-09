@@ -3,8 +3,8 @@ function RegisterTab() {
         let tab = tabs[0];
 
         if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
-            chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(response) {
-                if (response.userLoggedIn) {
+            chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(items) {
+                if (items.userLoggedIn) {
                     let data = JSON.stringify({ 
                         "url": tab.url,
                         "browser": "Chrome",
@@ -14,11 +14,11 @@ function RegisterTab() {
                     }); 
                     console.log('data: ', data);
 
-                    fetch(response.backendUrl + '/log/add', {
+                    fetch(items.backendUrl + '/log/add', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + response.token
+                            'Authorization': 'Bearer ' + items.token
                         },
                         body: data
                     }).then((response) => {
@@ -42,41 +42,59 @@ function RegisterTab() {
 
 
 
-async function logIn(email, pass) {
-    const response = await fetch('http://localhost:8080/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            'email': email,
-            'password': pass
-        })
+function logIn(email, pass) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['backendUrl'], function(items) {
+            if (chrome.runtime.lastError) {
+                console.error('lastError:', chrome.runtime.lastError);
+                resolve(1);
+            }
+            fetch(items.backendUrl + '/auth/signin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'email': email,
+                    'password': pass
+                })
+            }).then((response) => {
+                console.log("Fetch response: ", response);
+                if (response.status === 200) {
+                    response.json().then((response_data) => {
+                        console.log("Fetch response data: ", response_data);
+                        chrome.storage.local.set({ userLoggedIn: true, token: response_data.userInfo.token }, () => {
+                            if (chrome.runtime.lastError) {
+                                console.error('lastError:', chrome.runtime.lastError);
+                                resolve(1);
+                            }
+                            chrome.tabs.onActivated.addListener(RegisterTab);
+                            chrome.tabs.onUpdated.addListener(RegisterTab);
+                            console.log('Log in succeessful');
+                            resolve(0);
+                        });
+                    });
+                } else {
+                    return 1;
+                }
+
+            });
+        });
     });
-    console.log("Fetch response: ", response);
-    if (response.status === 200) {
-        const response_data = await response.json();
-        chrome.storage.local.set({ userLoggedIn: true, token: response_data.userInfo.token });
-        if (chrome.runtime.lastError) {
-            console.error('lastError:', chrome.runtime.lastError);
-            return 1;
-        }
-        chrome.tabs.onActivated.addListener(RegisterTab);
-        chrome.tabs.onUpdated.addListener(RegisterTab);
-        console.log('Log in succeessful');
-        return 0;
-    } else {
-        return 1;
-    }
 }
 
 function logOut() {
-    try {
-        chrome.storage.local.set({ userLoggedIn: false, token: "" });
-        chrome.tabs.onActivated.removeListener(RegisterTab);
-        chrome.tabs.onUpdated.removeListener(RegisterTab);
-        return 0;
-    } catch {
-        return 1;
-    }
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.set({ userLoggedIn: false, token: "" }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('lastError:', chrome.runtime.lastError);
+                resolve(1);
+            } else {
+                chrome.tabs.onActivated.removeListener(RegisterTab);
+                chrome.tabs.onUpdated.removeListener(RegisterTab);
+                console.log('Log out succeessful');
+                resolve(0);
+            }
+        });
+    });
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -84,7 +102,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         logIn(request.email, request.pass).then(sendResponse);
         return true;
     } else if (request.message === 'logout') {
-        sendResponse(logOut());
+        logOut().then(sendResponse);
         return true;
     } 
 });
