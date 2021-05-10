@@ -2,44 +2,66 @@ function RegisterTab() {
     chrome.tabs.query({active:true}, function(tabs) {
         let tab = tabs[0];
 
-        if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
-            chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(items) {
-                if (chrome.runtime.lastError) {
-                    console.error('lastError:', chrome.runtime.lastError);
-                    return;
-                }
-                if (items.userLoggedIn) {
-                    let data = JSON.stringify({ 
-                        "url": tab.url,
-                        "browser": "Chrome",
-                        "startDateTime": new Date().toISOString(),
-                        "tabName": tab.title,
-                        "background": false
-                    }); 
-                    console.log('data: ', data);
+        chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(items) {
+            if (chrome.runtime.lastError) {
+                console.error('lastError:', chrome.runtime.lastError);
+                return;
+            }
+            if (items.userLoggedIn) {
+                let datetime =  new Date().toISOString();
+                console.log('datetime: ', datetime);
 
-                    fetch(items.backendUrl + '/log/add', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + items.token
-                        },
-                        body: data
-                    }).then((response) => {
-                        if (response.status == 200) {
-                            console.log('Log added successfully');
-                        } else if (response.status == 401) {
-                            console.error('Unauthorized');
-                            logOut();
-                        } else {
-                            console.error('Log add failure: ', response);
-                        }
-                    })
-                } else {
-                    console.error('Unauthorized');
-                }
-            })
-        }
+                fetch(items.backendUrl + '/log/setLastLogEndDateTime', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'Authorization': 'Bearer ' + items.token
+                    },
+                    body: datetime
+                }).then((response) => {
+                    if (response.status == 200) {
+                        console.log('Log updated successfully');
+                    } else if (response.status == 401) {
+                        console.error('Unauthorized');
+                        logOut();
+                    } else {
+                        console.error('Log update failure: ', response);
+                    }
+                }).then((response) => {
+                    if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
+                        let data = JSON.stringify({ 
+                            "url": tab.url,
+                            "browser": "Chrome",
+                            "startDateTime": datetime,
+                            "tabName": tab.title,
+                            "background": false
+                        }); 
+                        console.log('data: ', data);
+    
+                        fetch(items.backendUrl + '/log/add', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + items.token
+                            },
+                            body: data
+                        }).then((response) => {
+                            if (response.status == 200) {
+                                console.log('Log added successfully');
+                            } else if (response.status == 401) {
+                                console.error('Unauthorized');
+                                logOut();
+                            } else {
+                                console.error('Log add failure: ', response);
+                            }
+                        })
+                    }
+                });
+            } else {
+                console.error('Unauthorized');
+                logOut();
+            }
+        })
     })
 }
 
