@@ -37,7 +37,6 @@ function RegisterTab() {
                     })
                 } else {
                     console.error('Unauthorized');
-                    logOut();
                 }
             })
         }
