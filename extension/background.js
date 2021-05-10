@@ -3,8 +3,12 @@ function RegisterTab() {
         let tab = tabs[0];
 
         if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
-            chrome.storage.local.get(['userLoggedIn', 'token'], function(response) {
-                if (response.userLoggedIn) {
+            chrome.storage.local.get(['backendUrl', 'userLoggedIn', 'token'], function(items) {
+                if (chrome.runtime.lastError) {
+                    console.error('lastError:', chrome.runtime.lastError);
+                    return;
+                }
+                if (items.userLoggedIn) {
                     let data = JSON.stringify({ 
                         "url": tab.url,
                         "browser": "Chrome",
@@ -12,22 +16,21 @@ function RegisterTab() {
                         "tabName": tab.title,
                         "background": false
                     }); 
-                    console.info('token: ', 'Bearer ' + response.token);
-                    console.info('data: ', data);
+                    console.log('data: ', data);
 
-                    fetch('http://localhost:8080/log/add', {
+                    fetch(items.backendUrl + '/log/add', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + response.token
+                            'Authorization': 'Bearer ' + items.token
                         },
                         body: data
                     }).then((response) => {
                         if (response.status == 200) {
-                            console.log('Log added successfully: ', response);
+                            console.log('Log added successfully');
                         } else if (response.status == 401) {
                             console.error('Unauthorized');
-                            chrome.storage.local.set({ userLoggedIn: false, token: "" });
+                            logOut();
                         } else {
                             console.error('Log add failure: ', response);
                         }
@@ -39,9 +42,88 @@ function RegisterTab() {
         }
     })
 }
-  
-  
-chrome.runtime.onInstalled.addListener(function() {
-    chrome.tabs.onActivated.addListener(RegisterTab);
-    chrome.tabs.onUpdated.addListener(RegisterTab);
+
+
+
+function logIn(email, pass) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['backendUrl'], function(items) {
+            if (chrome.runtime.lastError) {
+                console.error('lastError:', chrome.runtime.lastError);
+                resolve(1);
+            }
+            fetch(items.backendUrl + '/auth/signin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'email': email,
+                    'password': pass
+                })
+            }).then((response) => {
+                if (response.status === 200) {
+                    response.json().then((response_data) => {
+                        chrome.storage.local.set({ userLoggedIn: true, token: response_data.userInfo.token }, () => {
+                            if (chrome.runtime.lastError) {
+                                console.error('lastError:', chrome.runtime.lastError);
+                                resolve(1);
+                            }
+                            chrome.tabs.onActivated.addListener(RegisterTab);
+                            chrome.tabs.onUpdated.addListener(RegisterTab);
+                            console.log('Log in succeessful');
+                            resolve(0);
+                        });
+                    });
+                } else {
+                    return 1;
+                }
+
+            });
+        });
+    });
+}
+
+function logOut() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.set({ userLoggedIn: false, token: "" }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('lastError:', chrome.runtime.lastError);
+                resolve(1);
+            } else {
+                chrome.tabs.onActivated.removeListener(RegisterTab);
+                chrome.tabs.onUpdated.removeListener(RegisterTab);
+                console.log('Log out succeessful');
+                resolve(0);
+            }
+        });
+    });
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.message === 'login') {
+        logIn(request.email, request.pass).then(sendResponse);
+        return true;
+    } else if (request.message === 'logout') {
+        logOut().then(sendResponse);
+        return true;
+    } 
+});
+
+chrome.runtime.onInstalled.addListener((details) => {
+    const manifest = chrome.runtime.getManifest();
+    const backendUrl = manifest.host_permissions[0].slice(0, -2);
+    console.log("backendUrl: ", backendUrl);
+    chrome.storage.local.set({ backendUrl: backendUrl }, () => {
+        if (chrome.runtime.lastError) {
+            console.error('lastError:', chrome.runtime.lastError);
+        }
+    });
+    chrome.storage.local.get(['userLoggedIn'], function(response) {
+        if (chrome.runtime.lastError) {
+            console.error('lastError:', chrome.runtime.lastError);
+        }
+        if (response.userLoggedIn) {
+            chrome.tabs.onActivated.addListener(RegisterTab);
+            chrome.tabs.onUpdated.addListener(RegisterTab);
+        };
+    });
 });

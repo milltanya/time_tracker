@@ -7,7 +7,7 @@ chrome.storage.local.get(['userLoggedIn', 'user_info'],
         } else if (response.userLoggedIn === true){
             window.location.replace('./popup-log-out.html');
         } else {
-            console.log('userLoggedIn: ',  response.userLoggedIn);
+            console.error('userLoggedIn:',  response.userLoggedIn);
         }
     }
 );
