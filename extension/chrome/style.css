@@ -1,0 +1,34 @@
+body {
+    width: 50mm;
+    height: 40mm;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-size: 100%;
+}
+
+form, div {
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+input {
+    padding: 5%;
+    width: 80%;
+    height: 10%;
+    color: rgb(130, 130, 130);
+    border-color: rgb(130, 130, 130);
+    border-width: thin;
+}
+
+button {
+    padding: 5%;
+    width: 60%;
+    border: none;
+    background-color: #060b26;
+    color: white;
+    font-weight: bold;
+}
