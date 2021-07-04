@@ -75,8 +75,7 @@ async function RegisterTab() {
         "url": tab.url,
         "browser": "Chrome",
         "startDateTime": datetime,
-        "tabName": tab.title,
-        "background": false
+        "tabName": tab.title
     }; 
     console.log('data: ', data);
 
