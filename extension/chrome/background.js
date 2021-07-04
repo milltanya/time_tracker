@@ -18,6 +18,21 @@ function GetPageMetas() {
 }
 
 
+function format(n, l) {
+    let s = n.toString()
+    while (s.length < l) {
+        s = '0' + s;
+    }
+    return s;
+}
+
+function LocalNow() {
+    let datetime =  new Date();
+    return format(datetime.getFullYear(), 4) + '-' + format(datetime.getMonth() + 1, 2) + '-' + format(datetime.getDate(), 2) + 
+        'T' + format(datetime.getHours(), 2) + ':' + format(datetime.getMinutes(), 2) + ':' + format(datetime.getSeconds(), 2);
+}
+
+
 async function RegisterTab() {
     const tabs = await chrome.tabs.query({active:true});
     let tab = tabs[0];
@@ -45,7 +60,7 @@ async function RegisterTab() {
         return;
     }
 
-    let datetime =  new Date().toISOString();
+    let datetime = LocalNow();
     console.log('datetime: ', datetime);
 
     const updateResponse = await fetch(items.backendUrl + '/log/setLastLogEndDateTime', {
@@ -64,7 +79,7 @@ async function RegisterTab() {
         logOut();
         return;
     } else {
-        console.error('Log update failure: ', updateResponse);
+        console.debug('Log update failure: ', updateResponse);
     }
 
     if (!tab.url.startsWith('http://') && !tab.url.startsWith('https://')) {
@@ -93,7 +108,7 @@ async function RegisterTab() {
         logOut();
         return;
     } else if (addResponse.status !== 200) {
-        console.error('Log add failure: ', addResponse);
+        console.debug('Log add failure: ', addResponse);
         return;
     }
     console.log('Log added successfully');
@@ -149,7 +164,7 @@ async function RegisterTab() {
         console.error('Unauthorized');
         logOut();
     } else {
-        console.error('Meta add failure: ', setMetasResponse);
+        console.debug('Meta add failure: ', setMetasResponse);
     }
 }
 
